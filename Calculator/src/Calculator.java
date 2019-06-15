@@ -5,14 +5,14 @@ import java.util.regex.Pattern;
 public class Calculator {
 	
 	static String num="\\d+\\.?(\\d+)?";
-	static String expr="5+(10+2*12+4)+6";
+	static StringBuilder fullExpr=new StringBuilder("5+(6+(79*3+(1+15))+3)+10");
 	
-	public static String openBrackets(String expr){
+	public static String openBrackets(String localExpr){
 		boolean insideBrackets=false;
 		int bracketsCounter=0, currentPos=0, openingBracketPos=-1, closingBracketPos=-1;
-		while(currentPos<expr.length()){
+		while(currentPos<localExpr.length()){
 			
-			char currentChar=expr.charAt(currentPos);
+			char currentChar=localExpr.charAt(currentPos);
 			if(currentChar=='('){
 				insideBrackets=true;
 				bracketsCounter++;
@@ -24,9 +24,9 @@ public class Calculator {
 				closingBracketPos=currentPos;
 				bracketsCounter--;
 				if(bracketsCounter==0){
-					String resultFromBracket=openBrackets(expr.substring(openingBracketPos+1, closingBracketPos));
-					expr=expr.substring(0,openingBracketPos)+resultFromBracket+expr.substring(closingBracketPos+1,expr.length());
-					currentPos=openingBracketPos+resultFromBracket.length();
+					String resultFromBracket=openBrackets(localExpr.substring(openingBracketPos+1, closingBracketPos));
+					localExpr=localExpr.substring(0, openingBracketPos)+resultFromBracket+localExpr.substring(closingBracketPos+1,localExpr.length());
+					currentPos=openingBracketPos;
 					bracketsCounter=0;
 					openingBracketPos=-1;
 					closingBracketPos=-1;
@@ -37,9 +37,9 @@ public class Calculator {
 			}
 		}
 		
-		String exp=reduce(expr, "[\\*\\/]");
-		exp=reduce(exp, "[\\+\\-]");
-		return exp;
+		String beforeCalculating=reduce(localExpr, "[\\*\\/]");
+		beforeCalculating=reduce(beforeCalculating, "[\\+\\-]");
+		return beforeCalculating;
 	}
 	
 	public static String reduce(String expr, String operator){
@@ -96,8 +96,8 @@ public class Calculator {
 	}
 	
 	public static void main(String[] args){
-		System.out.println("Calculate this expression: "+expr);
-		String result=openBrackets(expr);
+		System.out.println("Calculate this expression: "+fullExpr);
+		String result=openBrackets(fullExpr.toString());
 		System.out.println("The result of the expression is: "+result);
 		
 	}
