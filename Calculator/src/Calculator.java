@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 public class Calculator {
 	
 	static String num="\\d+\\.?(\\d+)?";
-	static StringBuilder fullExpr=new StringBuilder("5+(6+(79*3+(1+15))+3)+10");
+	static String fullExpr=new String("((10-15)*5)*(6+4)");
 	
 	public static String openBrackets(String localExpr){
 		boolean insideBrackets=false;
@@ -23,9 +23,23 @@ public class Calculator {
 			}else if(currentChar==')'){
 				closingBracketPos=currentPos;
 				bracketsCounter--;
+				currentPos++;
 				if(bracketsCounter==0){
-					String resultFromBracket=openBrackets(localExpr.substring(openingBracketPos+1, closingBracketPos));
-					localExpr=localExpr.substring(0, openingBracketPos)+resultFromBracket+localExpr.substring(closingBracketPos+1,localExpr.length());
+					String exprInBrackets=localExpr.substring(openingBracketPos+1, closingBracketPos);
+					String resultFromBracket=openBrackets(exprInBrackets);
+					String beforeBrackets=localExpr.substring(0, openingBracketPos);
+					String afterBrackets=localExpr.substring(closingBracketPos+1, localExpr.length());
+					String beforeBracketsInversedSign;
+					
+					if(resultFromBracket.startsWith("-") & beforeBrackets.length()>0){
+						
+						beforeBracketsInversedSign=inverseSign(beforeBrackets, resultFromBracket, afterBrackets);
+						localExpr=beforeBracketsInversedSign+resultFromBracket.substring(1,resultFromBracket.length())+afterBrackets;
+					}else if(resultFromBracket.startsWith("-") & beforeBrackets.length()==0){
+						localExpr="-"+resultFromBracket.substring(1,resultFromBracket.length())+afterBrackets;
+					}else{
+						localExpr=beforeBrackets+resultFromBracket+afterBrackets;
+					}
 					currentPos=openingBracketPos;
 					bracketsCounter=0;
 					openingBracketPos=-1;
@@ -42,10 +56,44 @@ public class Calculator {
 		return beforeCalculating;
 	}
 	
+	public static String inverseSign(String beforeBrackets, String inBrackets, String afterBrackets){
+		int pos=searchForNearestSign(beforeBrackets);
+		
+		char nearestSign=beforeBrackets.charAt(pos);
+		String beforeBracketsInversedSign;
+		if(nearestSign=='+'){
+			beforeBracketsInversedSign=beforeBrackets.substring(0,pos)+"-"+beforeBrackets.substring(pos+1,beforeBrackets.length());
+		}else if(nearestSign=='-'){
+			beforeBracketsInversedSign=beforeBrackets.substring(0,pos)+"+"+beforeBrackets.substring(pos+1,beforeBrackets.length());
+		}else if(nearestSign=='('){
+			beforeBracketsInversedSign=beforeBrackets.substring(0,pos+1)+"-"+beforeBrackets.substring(pos+1,beforeBrackets.length());
+		}else{
+			beforeBracketsInversedSign="-"+beforeBrackets;
+		}
+		return beforeBracketsInversedSign;
+	}
+	
+	public static int searchForNearestSign(String expr){
+		int signPos=-1, currentPos=expr.length()-1;
+		char currentChar;
+		while(currentPos>=0 & signPos==-1){
+			currentChar=expr.charAt(currentPos);
+			if(currentChar=='+' | currentChar=='-' | currentChar=='('){
+				signPos=currentPos;
+			}
+			currentPos--;
+		}
+		if(signPos==-1)
+			return 0;
+		else
+			return signPos;
+		
+	}
+	
 	public static String reduce(String expr, String operator){
 		int start=0;
 		StringBuilder sb=new StringBuilder(expr);
-		Pattern oprndsP=Pattern.compile(num+operator+num);
+		Pattern oprndsP=Pattern.compile("\\-?"+num+operator+num);
 		Matcher oprndsM=oprndsP.matcher(sb);
 		while(oprndsM.find(start)){
 			String subexpr=oprndsM.group();
@@ -62,7 +110,7 @@ public class Calculator {
 	}
 	
 	public static double evaluate(String expr, String operator){
-		Pattern numPattern=Pattern.compile(num);
+		Pattern numPattern=Pattern.compile("\\-?"+num);
 		Matcher numMatcher=numPattern.matcher(expr);
 		numMatcher.find();
 		String firstNumStr=numMatcher.group();
@@ -70,7 +118,7 @@ public class Calculator {
 		
 		Pattern operPattern=Pattern.compile(operator);
 		Matcher operMatcher=operPattern.matcher(expr);
-		operMatcher.find();
+		operMatcher.find(numMatcher.end());
 		String oper=operMatcher.group();
 		
 		numMatcher.find(operMatcher.end());
